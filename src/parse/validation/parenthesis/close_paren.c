@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   close_paren.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ldurmish < ldurmish@student.42wolfsburg.d  +#+  +:+       +#+        */
+/*   By: vszpiech <vszpiech@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/03/10 16:19:54 by ldurmish          #+#    #+#             */
-/*   Updated: 2025/03/19 02:21:29 by ldurmish         ###   ########.fr       */
+/*   Created: 2025/06/30 15:55:13 by vszpiech          #+#    #+#             */
+/*   Updated: 2025/06/30 17:25:41 by ldurmish         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,8 +43,8 @@ bool	check_commands_after_paren(char *input, int *j)
 		k = 0;
 		while (k < *j)
 		{
-			if (ft_is_operator(input[k]) || input[*j] == '|'
-				|| (input[k + 1] && ft_is_logical_op(input[k], input[k + 1])))
+			if (ft_is_operator(input[k]) || input[*j] == '|' || (input[k + 1]
+					&& ft_is_logical_op(input[k], input[k + 1])))
 			{
 				found_operator = true;
 				break ;
@@ -53,8 +53,8 @@ bool	check_commands_after_paren(char *input, int *j)
 		}
 		if (!found_operator)
 		{
-			report_error(ERR_SYNTAX, "missing operator between"
-				"parenthesis and commands");
+			report_error(ERR_SYNTAX,
+				"missing operator between parenthesis and commands");
 			return (false);
 		}
 	}
@@ -96,12 +96,8 @@ bool	logical_op_after_paren(char *input, t_token *token, int *j)
 			(*j)++;
 			while (input[*j] && ft_isspace(input[*j]))
 				(*j)++;
-			if (!input[*j] || !is_valid_command_char(input[*j]))
-			{
-				report_error(ERR_SYNTAX, "pipe without command");
-				free_stack(token);
-				return (false);
-			}
+			if (!input[*j])
+				return (true);
 		}
 	}
 	return (true);
@@ -109,9 +105,9 @@ bool	logical_op_after_paren(char *input, t_token *token, int *j)
 
 bool	check_next_token(t_token *next)
 {
-	t_token			*next_token;
-	char			*next_input;
-	int				j;
+	t_token		*next_token;
+	char		*next_input;
+	int			j;
 
 	if (!next || !next->next)
 		return (true);

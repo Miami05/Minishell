@@ -1,7 +1,18 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   main.c                                             :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: vszpiech <vszpiech@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/06/28 18:49:31 by vszpiech          #+#    #+#             */
+/*   Updated: 2025/06/30 18:21:15 by vszpiech         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
 #include "../include/minishell.h"
 
-t_ctx	*g_ctx;
+t_ctx		*g_ctx;
 
 static void	init_main_context(t_ctx *main_ctx, int argc, char **argv)
 {
@@ -33,10 +44,10 @@ int	main(int argc, char **argv, char **envp)
 			printf("exit\n");
 			cleanup_minishell(env_list, NULL, NULL, NULL);
 			signal(SIGQUIT, SIG_IGN);
-			exit(get_last_exit_status(&g_main_ctx));
+			exit(gles(&g_main_ctx));
 		}
 		handle_input(input, env_list, &g_main_ctx);
 		free(input);
 	}
-	return (cleanup_minishell(env_list, NULL, NULL, NULL), 0);
+	return (cleanup_minishell(env_list, NULL, NULL, NULL), gles(&g_main_ctx));
 }

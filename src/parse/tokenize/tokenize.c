@@ -2,11 +2,14 @@
 /*                                                                            */
 /*                                                        :::      ::::::::   */
 /*   tokenize.c                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: codespace <codespace@student.42.fr>        +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
+/*                                                    +:+ +:+        
+	+:+     */
+/*   By: codespace <codespace@student.42.fr>        +#+  +:+      
+	+#+        */
+/*                                                +#+#+#+#+#+  
+	+#+           */
 /*   Created: 2025/02/13 15:33:10 by ldurmish          #+#    #+#             */
-/*   Updated: 2025/06/10 10:57:14 by ldurmish         ###   ########.fr       */
+/*   Updated: 2025/06/30 15:17:31 by ldurmish         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,10 +17,17 @@
 
 int	handle_operator(t_token **token, char *input, int *i)
 {
-	int		status;
+	int	status;
 
 	if (input[*i] == '(' || input[*i] == ')')
 		return (return_parenthesis(token, input[*i]));
+	if (input[*i] == '>' && input[*i + 1] == '|')
+	{
+		if (handle_single_operator(token, '>') == -1)
+			return (-1);
+		(*i)++;
+		return (1);
+	}
 	status = handle_double_operator(token, input, i);
 	if (status != 0)
 		return (status);
@@ -25,13 +35,16 @@ int	handle_operator(t_token **token, char *input, int *i)
 }
 
 int	tokenize_utils(t_token **token, char *input, int *i)
+
 {
-	int		status;
+	int	status;
 
 	status = handle_assignment(token, input, i);
 	if (status != 0)
 		return (status);
-	if (input[*i] == '\'' || input[*i] == '"')
+	if (input[*i] == '$' && input[*i + 1] == '\'')
+		status = handle_dollar_single_quotes(token, input, i);
+	else if (input[*i] == '\'' || input[*i] == '"')
 		status = handle_quotes(token, input, i);
 	else if (is_operator(input[*i]))
 	{

@@ -3,17 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   parenthesis_validation.c                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: codespace <codespace@student.42.fr>        +#+  +:+       +#+        */
+/*   By: vszpiech <vszpiech@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/02/23 17:59:54 by ldurmish          #+#    #+#             */
-/*   Updated: 2025/06/28 22:58:07 by ldurmish         ###   ########.fr       */
+/*   Created: 2025/06/30 15:49:36 by vszpiech          #+#    #+#             */
+/*   Updated: 2025/06/30 15:49:36 by vszpiech         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../../../include/minishell.h"
 
 bool	parenthesis(t_token *token, char *input, t_paren *commands,
-	t_assign_context *ctx)
+		t_assign_context *ctx)
 {
 	int						i;
 	t_validation_context	vctx;
@@ -39,8 +39,8 @@ bool	parenthesis_utils(t_token *tokenize)
 	t_paren				commands;
 
 	stack = tokenize;
-	commands = (t_paren)
-	{false, false, '\0', false, 0, false, (t_quotes){false, false}};
+	commands = (t_paren){false, false, '\0', false, 0, false, (t_quotes){false,
+		false}};
 	ctx = (t_assign_context){false, false, -1, NULL};
 	initialize_stack(stack);
 	while (stack && stack->value)
@@ -51,15 +51,15 @@ bool	parenthesis_utils(t_token *tokenize)
 		stack = stack->next;
 	}
 	if (!is_empty(stack))
-		return (report_error(ERR_UNEXPECTED_TOKEN, ")"),
-			free_stack(stack), false);
+		return (report_error(ERR_UNEXPECTED_TOKEN, ")"), free_stack(stack),
+			false);
 	free_stack(stack);
 	return (true);
 }
 
 bool	check_count_paren(t_token *tokenize)
 {
-	int		paren_count;
+	int	paren_count;
 
 	if (!tokenize)
 		return (true);
@@ -115,11 +115,6 @@ bool	validation_parenthesis(t_token *tokenize)
 	current = tokenize;
 	prev = NULL;
 	ctx = (t_assign_context){false, false, -1, NULL};
-	if (current && current->value[0] == '(' && current->next->value[0] == '(')
-	{
-		return (report_error(ERR_SYNTAX,
-				"double parenthesis '((' not supported"), false);
-	}
 	while (current)
 	{
 		update_assignment_context(&ctx, current);

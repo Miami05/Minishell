@@ -2,14 +2,14 @@
 /*                                                                            */
 /*                                                        :::      ::::::::   */
 /*   tokenize_utils_2.c                                 :+:      :+:    :+:   */
-/*                                                    +:+ +:+
+/*                                                    +:+ +:+        
 	+:+     */
-/*   By: ldurmish < ldurmish@student.42wolfsburg.d  +#+  +:+
+/*   By: vszpiech <vszpiech@student.42.fr>          +#+  +:+      
 	+#+        */
-/*                                                +#+#+#+#+#+
+/*                                                +#+#+#+#+#+  
 	+#+           */
-/*   Created: 2025/02/14 13:12:02 by ldurmish          #+#    #+#             */
-/*   Updated: 2025/06/15 11:53:03 by ldurmish         ###   ########.fr       */
+/*   Created: 2025/06/30 15:56:07 by vszpiech          #+#    #+#             */
+/*   Updated: 2025/06/30 15:56:07 by vszpiech         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,9 +39,9 @@ static int	get_quote_content(char *input, int *i, char quote_type,
 
 int	handle_quotes(t_token **token, char *input, int *i)
 {
-	t_token		*current;
-	char		*content;
-	char		quote_type;
+	t_token	*current;
+	char	*content;
+	char	quote_type;
 
 	quote_type = input[*i];
 	if (get_quote_content(input, i, quote_type, &content) == -1)
@@ -64,11 +64,39 @@ int	handle_quotes(t_token **token, char *input, int *i)
 	return (1);
 }
 
+int	handle_dollar_single_quotes(t_token **token, char *input, int *i)
+{
+	int		start;
+	char	*content;
+	t_token	*current;
+
+	start = *i + 2;
+	*i = start;
+	while (input[*i] && input[*i] != '\'')
+		(*i)++;
+	if (!input[*i])
+	{
+		report_error(ERR_SYNTAX, "Unmatched parenthesis");
+		return (-1);
+	}
+	content = ft_substr(input, start, *i - start);
+	if (!content)
+		return (-1);
+	current = create_node(content, TOKEN_WORD);
+	free(content);
+	if (!current)
+		return (-1);
+	current->expandable = 0;
+	current->quotes.in_single_quotes = true;
+	append_node(token, current);
+	return (1);
+}
+
 int	handle_word(t_token **token, char *input, int *i)
 {
-	int			start;
-	char		*word;
-	t_token		*current;
+	int		start;
+	char	*word;
+	t_token	*current;
 
 	start = *i;
 	while (input[*i] && !ft_isspace(input[*i]) && !is_operator(input[*i])

@@ -5,8 +5,8 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: vszpiech <vszpiech@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/06/28 17:35:47 by vszpiech          #+#    #+#             */
-/*   Updated: 2025/06/28 17:35:49 by vszpiech         ###   ########.fr       */
+/*   Created: 2025/06/06 17:29:34 by vela              #+#    #+#             */
+/*   Updated: 2025/06/28 19:19:12 by vszpiech         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@ void	update_last_exit_status(t_ctx *ctx, int status)
 		ctx->last_exit_status = status;
 }
 
-int	get_last_exit_status(t_ctx *ctx)
+int	gles(t_ctx *ctx)
 {
 	if (!ctx)
 		return (0);

@@ -5,30 +5,12 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: vszpiech <vszpiech@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/06/28 17:35:07 by vszpiech          #+#    #+#             */
-/*   Updated: 2025/06/28 17:35:29 by vszpiech         ###   ########.fr       */
+/*   Created: 2025/06/28 18:53:59 by vszpiech          #+#    #+#             */
+/*   Updated: 2025/06/30 17:15:57 by ldurmish         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
-#include <fcntl.h>
-#include <stdlib.h>
-#include <unistd.h>
-
-static int	handle_heredocs(t_ast *data, t_redir_ls *list)
-{
-	t_redir_ls	*curr;
-
-	curr = list;
-	while (curr)
-	{
-		if (curr->type == TOKEN_HEREDOC)
-			if (!create_heredoc_file(data, curr))
-				return (0);
-		curr = curr->next;
-	}
-	return (1);
-}
 
 static int	open_infiles(t_ast *data, t_redir_ls *curr, int *fd_in)
 {
@@ -39,7 +21,6 @@ static int	open_infiles(t_ast *data, t_redir_ls *curr, int *fd_in)
 	fd = open(curr->filename, O_RDONLY);
 	if (fd < 0)
 	{
-		ft_putstr_fd("minishell: ", STDERR_FILENO);
 		perror(curr->filename);
 		if (data)
 			data->exit_status = 1;
@@ -64,7 +45,6 @@ static int	open_outfiles(t_ast *data, t_redir_ls *curr, int *fd_out)
 	fd = open(curr->filename, flags, 0644);
 	if (fd < 0)
 	{
-		ft_putstr_fd("minishell: ", STDERR_FILENO);
 		perror(curr->filename);
 		if (data)
 			data->exit_status = 1;
@@ -103,4 +83,15 @@ int	setup_fds(t_ast *data, t_ast *tree, int *fd_in, int *fd_out)
 	if (!handle_heredocs(data, tree->cmd->redirections))
 		return (0);
 	return (apply_redirs(data, tree->cmd->redirections, fd_in, fd_out));
+}
+
+int	prepare_heredoc_tree(t_ast *data, t_ast *tree)
+{
+	if (!tree)
+		return (1);
+	if (tree->type == AST_COMMAND)
+		return (handle_heredocs(data, tree->cmd->redirections));
+	if (!prepare_heredoc_tree(data, tree->left))
+		return (0);
+	return (prepare_heredoc_tree(data, tree->right));
 }

@@ -5,12 +5,12 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: vszpiech <vszpiech@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/06/28 17:33:40 by vszpiech          #+#    #+#             */
-/*   Updated: 2025/06/28 17:33:40 by vszpiech         ###   ########.fr       */
+/*   Created: 2025/06/28 18:57:08 by vszpiech          #+#    #+#             */
+/*   Updated: 2025/06/30 16:14:26 by vszpiech         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../../include/minishell.h"
+#include "../../../include/minishell.h"
 
 void	incr_shell_lvl(t_env *data)
 {
@@ -81,10 +81,17 @@ static char	*checker(t_ast *data, char *cmd, char ***paths_ptr)
 	t_env	*path_env;
 
 	if (ft_strchr(cmd, '/'))
+	{
+		if (access(cmd, X_OK) == 0)
+			return (ft_strdup(cmd));
 		return (ft_strdup(cmd));
+	}
 	path_env = find_envir_variable(data, "PATH", 4);
-	if (!path_env || !path_env->value)
+	if (!path_env || !path_env->value || path_env->value[0] == '\0')
+	{
+		*paths_ptr = NULL;
 		return (NULL);
+	}
 	*paths_ptr = ft_split(path_env->value, ':');
 	if (!*paths_ptr)
 		return (NULL);
@@ -101,19 +108,21 @@ char	*find_executable_path(t_ast *data, char *cmd)
 	paths = NULL;
 	i = 0;
 	result = checker(data, cmd, &paths);
-	if (result != NULL || paths == NULL)
+	if (result != NULL)
 		return (result);
+	if (paths == NULL)
+	{
+		if (access(cmd, X_OK) == 0)
+			return (ft_strdup(cmd));
+		return (NULL);
+	}
 	while (paths[i] != NULL)
 	{
 		full_path = ft_strjoin3(paths[i], "/", cmd);
 		if (full_path != NULL && access(full_path, X_OK) == 0)
-		{
-			free_2darray(paths);
-			return (full_path);
-		}
+			return (free_2darray(paths), full_path);
 		free(full_path);
 		i++;
 	}
-	free_2darray(paths);
-	return (NULL);
+	return (free_2darray(paths), NULL);
 }

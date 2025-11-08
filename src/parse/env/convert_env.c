@@ -3,92 +3,67 @@
 /*                                                        :::      ::::::::   */
 /*   convert_env.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ldurmish < ldurmish@student.42wolfsburg.d  +#+  +:+       +#+        */
+/*   By: vszpiech <vszpiech@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/15 20:29:25 by ldurmish          #+#    #+#             */
-/*   Updated: 2025/06/22 15:36:47 by ldurmish         ###   ########.fr       */
+/*   Updated: 2025/06/30 16:52:28 by ldurmish         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../../include/minishell.h"
 
-t_env	*create_copy_env_node(t_env *original)
+int	is_after_heredoc(char *input, int pos)
 {
-	t_env	*env_node;
+	int	i;
 
-	env_node = malloc(sizeof(t_env));
-	if (!env_node)
-		return (NULL);
-	env_node->key = NULL;
-	env_node->next = NULL;
-	env_node->value = NULL;
-	if (original->key)
-	{
-		env_node->key = ft_strdup(original->key);
-		if (!env_node->key)
-		{
-			free(env_node);
-			return (NULL);
-		}
-	}
-	if (original->value)
-	{
-		env_node->value = ft_strdup(original->value);
-		if (!env_node->value)
-			return (free(env_node->key), free(env_node), NULL);
-	}
-	return (env_node);
+	i = pos - 1;
+	while (i >= 0 && ft_isspace(input[i]))
+		i--;
+	if (i >= 0 && (input[i] == '"' || input[i] == '\''))
+		i--;
+	while (i >= 0 && ft_isspace(input[i]))
+		i--;
+	if (i >= 1 && input[i] == '<' && input[i - 1] == '<')
+		return (1);
+	return (0);
 }
 
-void	process_env_var(t_args *parse, t_env *env_list, char *input)
+int	append_backslashes(t_args *p, int n)
 {
-	int		old_i;
+	char	*blk;
+	char	*old;
 
-	if (quotes(input, parse->i, parse))
-	{
-		parse->i++;
-		return ;
-	}
-	if (input[parse->i] == '$' && input[parse->i + 1]
-		&& input[parse->i + 1] != '\'' && input[parse->i + 1] != ' '
-		&& input[parse->i + 1] != '"')
-	{
-		old_i = parse->i;
-		parse->result = handle_env_part(parse, &parse->i, env_list);
-		if (parse->i == old_i)
-			parse->i++;
-		parse->start = parse->i;
-	}
-	else
-		parse->i++;
+	if (n <= 0)
+		return (1);
+	blk = ft_calloc(n + 1, sizeof(char));
+	if (!blk)
+		return (0);
+	ft_memset(blk, '\\', n);
+	old = p->result;
+	p->result = ft_strjoin(p->result, blk);
+	free(old);
+	free(blk);
+	return (1);
 }
 
-t_env	*deep_copy_env_list(t_env *env_list)
+char	*handle_special_utils(char *input, char *str, int *i, t_args *arg)
 {
-	t_env	*new_head;
-	t_env	*new_curr;
-	t_env	*new_node;
-	t_env	*original;
-
-	new_head = NULL;
-	new_curr = NULL;
-	original = env_list;
-	while (original)
+	if (input[*i] == '?')
 	{
-		new_node = create_copy_env_node(original);
-		if (!new_node)
-		{
-			free_env_list(new_head);
-			return (NULL);
-		}
-		if (!new_head)
-			new_head = new_node;
-		else
-			new_curr->next = new_node;
-		new_curr = new_node;
-		original = original->next;
+		str = ft_itoa(arg->exit_status);
+		(*i)++;
 	}
-	return (new_head);
+	else if (input[*i] == '@' || input[*i] == '*')
+	{
+		str = join_arguments(arg);
+		(*i)++;
+	}
+	else if (input[*i] == '0')
+	{
+		str = ft_strdup(arg->argv[0]);
+		(*i)++;
+	}
+	return (str);
 }
 
 char	*get_env_value(t_env *env_list, char *name)

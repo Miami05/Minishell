@@ -6,7 +6,7 @@
 /*   By: vszpiech <vszpiech@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/12 23:19:06 by ldurmish          #+#    #+#             */
-/*   Updated: 2025/06/28 22:51:18 by ldurmish         ###   ########.fr       */
+/*   Updated: 2025/06/30 17:26:40 by vszpiech         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,7 @@ static t_token	*tokenize_and_mark_expanded(char *input, char *expandable)
 	tokens = tokenize(expandable);
 	if (!tokens)
 		return (NULL);
+	merge_word_tokens(tokens);
 	was_expanded = (ft_strcmp(input, expandable) != 0);
 	if (was_expanded)
 	{
@@ -60,11 +61,12 @@ static char	*expand_and_tokenize(char *input, t_env *env_list, t_args *arg,
 		free_env_list(copy);
 		return (NULL);
 	}
+	expand_tilde_tokens(*tokens, env_list);
 	free_env_list(copy);
 	return (expandable);
 }
 
-static void	execute_input(t_token *t, t_env *env_list, char *exp, t_ctx *ctx)
+static void	*execute_input(t_token *t, t_env *env_list, char *exp, t_ctx *ctx)
 {
 	t_ast	*ast;
 
@@ -74,16 +76,23 @@ static void	execute_input(t_token *t, t_env *env_list, char *exp, t_ctx *ctx)
 	{
 		free(exp);
 		update_last_exit_status(ctx, 2);
-		return ;
+		return (NULL);
 	}
 	ast->heredoc_files = NULL;
 	ast->heredoc_count = 0;
 	ast->env_list = env_list;
+	if (!prepare_heredoc_tree(ast, ast))
+	{
+		update_last_exit_status(ctx, ast->exit_status);
+		cleanup_heredoc_files(ast);
+		free_ast(ast);
+		return (free(exp), NULL);
+	}
 	execute_tree(ast, ast);
 	update_last_exit_status(ctx, ast->exit_status);
 	cleanup_heredoc_files(ast);
 	free_ast(ast);
-	free(exp);
+	return (free(exp), NULL);
 }
 
 void	handle_input(char *input, t_env *env_list, t_ctx *ctx)
@@ -92,12 +101,12 @@ void	handle_input(char *input, t_env *env_list, t_ctx *ctx)
 	t_args	arg;
 	char	*expandable;
 
-	arg.exit_status = get_last_exit_status(ctx);
+	arg.exit_status = gles(ctx);
 	if (*input)
 	{
 		add_history(input);
 		arg = (t_args){.argc = ctx->argc - 1, .argv = ctx->argv,
-			.exit_status = get_last_exit_status(ctx)};
+			.exit_status = gles(ctx)};
 		expandable = expand_and_tokenize(input, env_list, &arg, &tokens);
 		if (!expandable)
 			return ;

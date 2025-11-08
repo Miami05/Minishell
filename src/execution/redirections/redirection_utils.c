@@ -5,32 +5,59 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: vszpiech <vszpiech@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/06/28 17:35:33 by vszpiech          #+#    #+#             */
-/*   Updated: 2025/06/28 17:35:36 by vszpiech         ###   ########.fr       */
+/*   Created: 2023/05/20 12:42:00 by user              #+#    #+#             */
+/*   Updated: 2025/06/30 16:15:58 by vszpiech         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-int	handle_line(int fd, char *line, char *delim)
+static void	write_expanded(int fd, char *line, t_ast *data)
+{
+	t_args	arg;
+	char	*tmp;
+	char	*expanded;
+
+	arg = (t_args){.argc = g_ctx->argc - 1, .argv = g_ctx->argv + 1,
+		.exit_status = gles(g_ctx)};
+	tmp = expand_tilde(line, data->env_list);
+	if (!tmp)
+		tmp = ft_strdup(line);
+	expanded = parse_env(tmp, data->env_list, &arg);
+	if (expanded)
+	{
+		ft_putendl_fd(expanded, fd);
+		free(expanded);
+	}
+	else
+		ft_putendl_fd(tmp, fd);
+	free(tmp);
+}
+
+int	handle_line(int fd, char *line, t_hdinfo *info)
 {
 	if (!line)
 	{
 		ft_putstr_fd("bash: warning: here-document delimited by ",
 			STDERR_FILENO);
 		ft_putstr_fd("end-of-file (wanted `", STDERR_FILENO);
-		ft_putstr_fd(delim, STDERR_FILENO);
+		ft_putstr_fd(info->delim, STDERR_FILENO);
 		ft_putendl_fd("')", STDERR_FILENO);
 		return (2);
 	}
-	if (ft_strcmp(line, delim) == 0)
+	if (ft_strcmp(line, info->delim) == 0)
 		return (1);
-	ft_putendl_fd(line, fd);
+	if (!info->quoted)
+	{
+		write_expanded(fd, line, info->data);
+	}
+	else
+		ft_putendl_fd(line, fd);
 	free(line);
 	return (0);
 }
 
-int	run_heredoc_loop(int fd, char *delim)
+int	run_heredoc_loop(int fd, t_hdinfo *info)
 {
 	char	*line;
 	int		status;
@@ -39,8 +66,13 @@ int	run_heredoc_loop(int fd, char *delim)
 	signal(SIGQUIT, SIG_DFL);
 	while (1)
 	{
-		line = readline("> ");
-		status = handle_line(fd, line, delim);
+		if (isatty(STDIN_FILENO))
+			line = readline("> ");
+		else
+			line = read_line_fd(STDIN_FILENO);
+		if (!isatty(STDIN_FILENO) && line && line[ft_strlen(line) - 1] == '\n')
+			line[ft_strlen(line) - 1] = '\0';
+		status = handle_line(fd, line, info);
 		if (status == 1)
 		{
 			free(line);
@@ -52,7 +84,7 @@ int	run_heredoc_loop(int fd, char *delim)
 	return (0);
 }
 
-int	fork_heredoc(int fd, char *delim)
+int	fork_heredoc(int fd, t_hdinfo *info)
 {
 	pid_t	pid;
 	int		status;
@@ -60,7 +92,7 @@ int	fork_heredoc(int fd, char *delim)
 
 	pid = fork();
 	if (pid == 0)
-		exit(run_heredoc_loop(fd, delim));
+		exit(run_heredoc_loop(fd, info));
 	waitpid(pid, &status, 0);
 	if (WIFSIGNALED(status))
 	{
@@ -80,13 +112,4 @@ int	setup_heredoc_filename(t_ast *data, t_ast *node, char *tmp)
 	if (!node->right->cmd->args[0] || add_heredoc(data, ft_strdup(tmp)))
 		return (1);
 	return (0);
-}
-
-char	*redir_path(t_ast *n)
-{
-	if (!n)
-		return (NULL);
-	if (n->cmd && n->cmd->args && n->cmd->args[0])
-		return (n->cmd->args[0]);
-	return (NULL);
 }

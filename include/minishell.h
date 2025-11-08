@@ -6,7 +6,7 @@
 /*   By: vela <vela@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/12 23:21:28 by ldurmish          #+#    #+#             */
-/*   Updated: 2025/06/28 22:17:21 by ldurmish         ###   ########.fr       */
+/*   Updated: 2025/06/30 17:36:05 by ldurmish         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -177,6 +177,7 @@ typedef struct s_redir_ls
 {
 	int					type;
 	char				*filename;
+	int					quoted;
 	struct s_redir_ls	*next;
 }	t_redir_ls;
 
@@ -283,8 +284,23 @@ typedef struct s_ctx
 	int			argc;
 	char		**argv;
 }	t_ctx;
+typedef struct s_hdinfo
+{
+	char		*delim;
+	int			quoted;
+	t_ast		*data;
+}		t_hdinfo;
 
 extern t_ctx	*g_ctx;
+int			cd_cleanup(t_ast *data, char *oldpwd, char *expanded, int err);
+int			cd_handle_dash(t_ast *data, char **path, char *oldpwd,
+				char *expanded);
+int			cd_expand_tilde(char **path, char **expanded, t_env *env);
+char		*cd_get_path(t_ast *tree, int *count);
+int			handle_heredocs(t_ast *data, t_redir_ls *list);
+char		*read_line_fd(int fd);
+void		merge_word_tokens(t_token *tokens);
+int			prepare_heredoc_tree(t_ast *data, t_ast *tree);
 int			open_unique_tmp(char *path);
 int			handle_file_error(char *filename);
 int			redirect_input(char *file, int *save);
@@ -299,12 +315,12 @@ int			open_infile(char *path);
 int			open_outfile(char *path, int type);
 void		create_intermediate_outfile(char *path, int type);
 void		cleanup_heredoc_files(t_ast *data);
-int			handle_line(int fd, char *line, char *delim);
-int			run_heredoc_loop(int fd, char *delim);
-int			fork_heredoc(int fd, char *delim);
+int			handle_line(int fd, char *line, t_hdinfo *info);
+int			run_heredoc_loop(int fd, t_hdinfo *info);
+int			fork_heredoc(int fd, t_hdinfo *info);
 int			setup_heredoc_filename(t_ast *data, t_ast *node, char *tmp);
 void		update_last_exit_status(t_ctx *ctx, int status);
-int			get_last_exit_status(t_ctx *ctx);
+int			gles(t_ctx *ctx);
 char		*join_path(char *dir_part, char *name);
 char		**add_match(char **matches, int *count, char *path);
 int			match_pattern(const char *pat, const char *str);
@@ -392,11 +408,16 @@ int			handle_double_operator(t_token **head, char *input, int *i);
 int			handle_single_operator(t_token **token, char c);
 int			handle_word(t_token **token, char *input, int *i);
 int			handle_quotes(t_token **token, char *input, int *i);
+int			handle_dollar_single_quotes(t_token **token, char *input, int *i);
 int			handle_whitespace(t_token **token, char *input, int *i);
 
 // Environmental variables
 t_env		*init_env_list(char **envp);
 int			quotes(char	*input, int i, t_args *parse);
+char		*handle_special_utils(char *input, char *str, int *i, t_args *arg);
+int			append_backslashes(t_args *p, int n);
+int			is_after_heredoc(char *input, int pos);
+void		process_env_var(t_args *p, t_env *env, char *in);
 char		*safe_and_expand_var(char *value);
 int			validate_parentheses(char *str);
 char		*process_env_value(char *value, t_args *arg);
@@ -410,6 +431,8 @@ char		*env_expansion(char *input, int *i, t_env *env_list, t_args *arg);
 t_env		*deep_copy_env_list(t_env *env_list);
 char		*strip_quotes_and_parens_tokens(t_token *tokens);
 char		*remove_quotes_and_paren(char *str);
+char		*expand_tilde(const char *path, t_env *env);
+void		expand_tilde_tokens(t_token *tokens, t_env *env);
 
 // Validation
 bool		validation(t_token *tokens);
@@ -463,9 +486,6 @@ bool		check_paren_syntax(t_token *curr, t_token *prev,
 				t_assign_context *ctx);
 void		update_assignment_context(t_assign_context *ctx, t_token *current);
 
-// Arithmetic
-bool		is_arithmetic_expression(t_token *token);
-
 // Operators
 bool		ft_is_operator(char c);
 bool		ft_is_logical_op(char current, char next);
@@ -518,20 +538,24 @@ void		free_stack(t_token *token);
 
 // Binary Tree
 t_ast		*parse_tokens(t_token *tokens);
+int			collect_delimiter(t_token **tokens, char **value, int *quoted);
 t_ast		*parse_command_line(t_token **curr);
+int			handle_word_token(t_expand_wild *exp, char ***temp_args);
 int			parse_setup_tokens(t_token **tokens);
+t_ast		*parse_init_command_node(t_token *token);
 int			is_redirection_token(t_token_type type);
 int			set_command_name(t_ast *cmd_node, char *name);
 int			add_command_arg(t_ast *cmd_node, char *arg);
 int			looks_like_subshell(t_token *curr);
-t_redir_ls	*create_redir_node(int type, char *filename);
+t_redir_ls	*create_redir_node(int type, char *filename, int quoted);
 t_ast		*parse_command(t_token **tokens);
 t_ast		*parse_logic_sequence(t_token **tokens);
 t_ast		*create_ast_node(t_ast_type type, t_token *token);
 void		free_ast(t_ast *node);
 t_ast		*parse_simple_commands(t_token **tokens);
 t_commands	*create_command_struct(void);
-int			add_redirection(t_commands *cmd, int type, char *filename);
+int			add_redirection(t_commands *cmd,
+				int type, char *filename, int quoted);
 char		**expand_command_args(char **temp_args, int temp_count);
 t_ast		*create_command_node(t_token *start, int word_count);
 void		skip_tree_whitespaces(t_token **tokens);

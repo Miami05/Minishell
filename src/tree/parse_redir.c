@@ -2,21 +2,18 @@
 /*                                                                            */
 /*                                                        :::      ::::::::   */
 /*   parse_redir.c                                      :+:      :+:    :+:   */
-/*                                                    +:+ +:+
-	+:+     */
-/*   By: ldurmish < ldurmish@student.42wolfsburg.d  +#+  +:+
-	+#+        */
-/*                                                +#+#+#+#+#+
-	+#+           */
-/*   Created: 2025/03/21 22:06:24 by ldurmish          #+#    #+#             */
-/*   Updated: 2025/06/22 17:11:35 by ldurmish         ###   ########.fr       */
+/*                                                    +:+ +:+         +:+     */
+/*   By: vszpiech <vszpiech@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/06/30 15:52:18 by vszpiech          #+#    #+#             */
+/*   Updated: 2025/06/30 17:36:10 by ldurmish         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../include/minishell.h"
 
 static int	validate_redirection_tokens(t_token **tokens, t_token **redir_token,
-		t_token **filename_token)
+		char **filename, int *quoted)
 {
 	if (!tokens || !*tokens)
 		return (0);
@@ -36,22 +33,27 @@ static int	validate_redirection_tokens(t_token **tokens, t_token **redir_token,
 			STDERR_FILENO);
 		return (0);
 	}
-	*filename_token = *tokens;
+	if (!collect_delimiter(tokens, filename, quoted))
+		return (0);
 	return (1);
 }
 
 static int	handle_single_redirection(t_token **tokens, t_commands *cmd)
 {
-	t_token	*redir_token;
-	t_token	*filename_token;
+	t_token		*redir_token;
+	char		*filename;
+	int			quoted;
 
 	if (!tokens || !*tokens || !cmd)
 		return (0);
-	if (!validate_redirection_tokens(tokens, &redir_token, &filename_token))
+	if (!validate_redirection_tokens(tokens, &redir_token, &filename, &quoted))
 		return (0);
-	if (!add_redirection(cmd, redir_token->type, filename_token->value))
+	if (!add_redirection(cmd, redir_token->type, filename, quoted))
+	{
+		free(filename);
 		return (0);
-	*tokens = (*tokens)->next;
+	}
+	free(filename);
 	return (1);
 }
 

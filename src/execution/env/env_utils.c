@@ -3,23 +3,29 @@
 /*                                                        :::      ::::::::   */
 /*   env_utils.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: vszpiech <vszpiech@student.42.fr>          +#+  +:+       +#+        */
+/*   By: marvin <marvin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/06/28 17:33:45 by vszpiech          #+#    #+#             */
-/*   Updated: 2025/06/28 17:33:45 by vszpiech         ###   ########.fr       */
+/*   Created: 2023/05/17 12:34:56 by user              #+#    #+#             */
+/*   Updated: 2025/04/12 15:09:35 by marvin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../include/minishell.h"
-#include <stdlib.h>
-#include <unistd.h>
 
 char	*ft_strjoin3(const char *s1, const char *s2, const char *s3)
 {
 	char	*tmp;
 	char	*res;
 
+	if (!s1)
+		s1 = "";
+	if (!s2)
+		s2 = "";
+	if (!s3)
+		s3 = "";
 	tmp = ft_strjoin(s1, s2);
+	if (!tmp)
+		return (NULL);
 	res = ft_strjoin(tmp, s3);
 	free(tmp);
 	return (res);

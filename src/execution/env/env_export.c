@@ -1,17 +1,17 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   env_export.c                                       :+:      :+:    :+:   */
+/*   export_arg.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: vszpiech <vszpiech@student.42.fr>          +#+  +:+       +#+        */
+/*   By: you <you@student.42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/06/28 17:33:31 by vszpiech          #+#    #+#             */
-/*   Updated: 2025/06/28 17:33:31 by vszpiech         ###   ########.fr       */
+/*   Created: 2025/06/05 12:12:00 by you               #+#    #+#             */
+/*   Updated: 2025/06/05 12:12:00 by you              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
 #include "libft.h"
+#include "minishell.h"
 
 static int	handle_existing(t_ast *data, char *key, char *val)
 {
@@ -50,11 +50,10 @@ int	export_one(t_ast *data, const char *arg)
 	key = NULL;
 	val = NULL;
 	s = split_key_value(arg, &key, &val);
-	if (s == 1
-		|| (s == -1 && !is_valid_identifier(arg))
-		|| (s != -1 && !is_valid_identifier(key)))
-		return (ft_putendl_fd("export: not a valid identifier", 2),
-			free(key), free(val), 1);
+	if (s == 1 || (s == -1 && !is_valid_identifier(arg)) || (s != -1
+			&& !is_valid_identifier(key)))
+		return (ft_putendl_fd("export: not a valid identifier", 2), free(key),
+			free(val), 1);
 	if (s == -1)
 	{
 		key = ft_strdup(arg);
